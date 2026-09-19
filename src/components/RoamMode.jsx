@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PLACES } from '../data/places.js'
 import { TIME_OPTIONS, BUDGET_OPTIONS } from '../data/vibes.js'
+import PlaceImage from './PlaceImage.jsx'
 
 function buildRoute(time, budget) {
   const travelBufferPerStop = 20 // minutes
@@ -97,7 +98,7 @@ export default function RoamMode() {
                   onClick={() => navigate(`/place/${p.id}`)}
                   className="tap flex-1 text-left bg-dusk-900 border border-dusk-700 rounded-2xl p-3.5 mb-4 flex gap-3"
                 >
-                  <img src={p.hero} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                  <PlaceImage query={p.heroQuery} className="w-16 h-16 rounded-xl shrink-0" labelSize="small" />
                   <div className="min-w-0">
                     <p className="font-display text-[15px] leading-snug">{p.name}</p>
                     <p className="text-[12px] text-parchment-100/50 mt-0.5">{p.bestTime}</p>

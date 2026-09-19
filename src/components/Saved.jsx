@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { PLACES } from '../data/places.js'
+import PlaceImage from './PlaceImage.jsx'
 
 export default function Saved() {
   const { saved } = useApp()
@@ -25,7 +26,7 @@ export default function Saved() {
               onClick={() => navigate(`/place/${p.id}`)}
               className="tap w-full flex gap-3 bg-dusk-900 border border-dusk-700 rounded-2xl p-3 text-left"
             >
-              <img src={p.hero} alt="" className="w-20 h-20 rounded-xl object-cover shrink-0" />
+              <PlaceImage query={p.heroQuery} className="w-20 h-20 rounded-xl shrink-0" labelSize="small" />
               <div className="min-w-0">
                 <p className="font-display text-[15px]">{p.name}</p>
                 <p className="text-[12px] text-parchment-100/50 mt-0.5">{p.category} · {p.area}</p>

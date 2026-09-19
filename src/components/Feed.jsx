@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { PLACES, scorePlace, reasonFor } from '../data/places.js'
-import { BUDGET_OPTIONS, TIME_OPTIONS } from '../data/vibes.js'
+import PlaceImage from './PlaceImage.jsx'
 
 export default function Feed() {
   const { session, setSession } = useApp()
@@ -26,7 +26,7 @@ export default function Feed() {
         <button onClick={() => navigate('/')} className="text-parchment-100/50 text-sm">← Change mood</button>
       </div>
       <h1 className="font-display text-2xl mt-2 mb-1">
-        {session.vibe.icon} {session.vibe.label}
+        {session.vibes.map((v) => v.icon).join(' ')} {session.vibes.map((v) => v.label).join(' + ')}
       </h1>
       <p className="text-parchment-100/50 text-[13px] mb-5">
         {session.time.label} · Up to KSh {session.budget.max === Infinity ? 'any' : session.budget.max}
@@ -53,7 +53,7 @@ function PlaceCard({ place, reason, featured }) {
       className={`tap w-full text-left rounded-card overflow-hidden border border-dusk-700 bg-dusk-900 block ${featured ? '' : ''}`}
     >
       <div className={`relative ${featured ? 'h-52' : 'h-36'}`}>
-        <img src={place.hero} alt="" className="w-full h-full object-cover" />
+        <PlaceImage query={place.heroQuery} className="w-full h-full" />
         {place.discoveryType === 'gem' && (
           <span className="absolute top-3 left-3 bg-savanna-500 text-dusk-950 text-[11px] font-semibold px-2.5 py-1 rounded-pill">
             💎 Hidden gem

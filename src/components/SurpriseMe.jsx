@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { PLACES, scorePlace } from '../data/places.js'
+import PlaceImage from './PlaceImage.jsx'
 
 export default function SurpriseMe() {
   const { session } = useApp()
@@ -37,7 +38,7 @@ export default function SurpriseMe() {
         </>
       ) : (
         <div className="w-full rise-in">
-          <img src={pick.hero} alt="" className="w-full h-56 object-cover rounded-card mb-5" />
+          <PlaceImage query={pick.heroQuery} className="w-full h-56 rounded-card mb-5" />
           <h1 className="font-display text-2xl mb-1">{pick.name}</h1>
           <p className="text-parchment-100/50 text-sm mb-5">{pick.distanceKm} km away · {pick.costLabel}</p>
           <button

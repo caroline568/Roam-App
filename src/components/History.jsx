@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { PLACES } from '../data/places.js'
 import { FEEDBACK_OPTIONS } from '../data/vibes.js'
+import PlaceImage from './PlaceImage.jsx'
 
 export default function History() {
   const { explorations } = useApp()
@@ -28,7 +29,7 @@ export default function History() {
                 onClick={() => navigate(`/place/${e.placeId}`)}
                 className="tap w-full flex gap-3 bg-dusk-900 border border-dusk-700 rounded-2xl p-3 text-left"
               >
-                {place && <img src={place.hero} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />}
+                {place && <PlaceImage query={place.heroQuery} className="w-16 h-16 rounded-xl shrink-0" labelSize="small" />}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="font-display text-[15px]">{e.placeName}</p>

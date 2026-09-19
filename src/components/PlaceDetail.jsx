@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { PLACES, reasonFor } from '../data/places.js'
+import { PLACES, reasonFor, directionsUrl } from '../data/places.js'
 import { useApp } from '../context/AppContext.jsx'
 import CheckInModal from './CheckInModal.jsx'
+import PlaceImage from './PlaceImage.jsx'
+import { getCurrentLocation } from '../lib/geolocation.js'
 
 export default function PlaceDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const place = PLACES.find((p) => p.id === id)
-  const { saved, toggleSaved, session, startExploration, explorations, checkIn, submitFeedback } = useApp()
+  const { saved, toggleSaved, session, startExploration, explorations, checkIn, submitFeedback, myPostsForPlace } = useApp()
   const [activeExplorationId, setActiveExplorationId] = useState(
     explorations.find((e) => e.placeId === id && e.status === 'active')?.id || null
   )
@@ -18,9 +20,27 @@ export default function PlaceDetail() {
   const isSaved = saved.includes(place.id)
   const reason = session ? reasonFor(place, session) : null
 
-  function handleGoExplore() {
+  // "Go explore" does two things: opens real Google Maps directions to the
+  // place — using your actual current location as the starting point when
+  // you grant permission, falling back to letting Maps handle/ask for a
+  // starting point if you don't — and starts tracking this as an active
+  // exploration so the app knows to ask "how was it?" when you come back.
+  //
+  // The tab is opened synchronously (before awaiting location) and its
+  // destination is filled in once we have it — opening it after an await
+  // can get silently blocked as a popup in some browsers.
+  async function handleGoExplore() {
     const exId = startExploration({ place, reason: reason || 'you tapped in from Saved' })
     setActiveExplorationId(exId)
+    const win = window.open('', '_blank', 'noopener,noreferrer')
+    const origin = await getCurrentLocation()
+    if (win) win.location = directionsUrl(place, origin)
+  }
+
+  async function handleGetDirections() {
+    const win = window.open('', '_blank', 'noopener,noreferrer')
+    const origin = await getCurrentLocation()
+    if (win) win.location = directionsUrl(place, origin)
   }
 
   function handleCheckIn() {
@@ -38,7 +58,7 @@ export default function PlaceDetail() {
   return (
     <div className="rise-in pb-6">
       <div className="relative h-72">
-        <img src={place.hero} alt={place.name} className="w-full h-full object-cover" />
+        <PlaceImage query={place.heroQuery} alt={place.name} className="w-full h-full" />
         <div className="absolute inset-0 bg-gradient-to-t from-dusk-950 via-dusk-950/10 to-transparent" />
         <button
           onClick={() => navigate(-1)}
@@ -60,8 +80,19 @@ export default function PlaceDetail() {
       </div>
 
       <div className="px-5 -mt-2">
-        <h1 className="font-display text-[1.7rem] leading-tight">{place.name}</h1>
-        <p className="text-parchment-100/50 text-sm mt-1">{place.category} · {place.area} · {place.distanceKm} km away</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-[1.7rem] leading-tight">{place.name}</h1>
+            <p className="text-parchment-100/50 text-sm mt-1">{place.category} · {place.area} · {place.distanceKm} km away</p>
+          </div>
+          <button
+            onClick={handleGetDirections}
+            className="tap shrink-0 w-10 h-10 rounded-full bg-dusk-900 border border-dusk-700 flex items-center justify-center text-lg"
+            title="Get directions"
+          >
+            🧭
+          </button>
+        </div>
 
         <div className="grid grid-cols-3 gap-2 my-5">
           <Stat label="Cost" value={place.costLabel} />
@@ -81,7 +112,7 @@ export default function PlaceDetail() {
 
         {!activeExplorationId ? (
           <button onClick={handleGoExplore} className="tap w-full bg-savanna-500 text-dusk-950 font-display font-semibold text-lg rounded-2xl py-4 mb-3">
-            Go explore →
+            Go explore → opens directions
           </button>
         ) : (
           <button onClick={handleCheckIn} className="tap w-full bg-acacia-500 text-parchment-50 font-display font-semibold text-lg rounded-2xl py-4 mb-3">
@@ -91,7 +122,7 @@ export default function PlaceDetail() {
 
         <hr className="border-dusk-700 my-7" />
 
-        <CommunitySection place={place} />
+        <CommunitySection place={place} myPosts={myPostsForPlace(place.id)} />
       </div>
 
       {showCheckIn && (
@@ -110,17 +141,39 @@ function Stat({ label, value, small }) {
   )
 }
 
-function CommunitySection({ place }) {
+function CommunitySection({ place, myPosts }) {
+  const totalVisits = place.community.length + myPosts.length
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display text-lg">From explorers who've been</h2>
-        <span className="text-[12px] text-parchment-100/40">{place.community.length} verified visits</span>
+        <span className="text-[12px] text-parchment-100/40">{totalVisits} verified visits</span>
       </div>
       <div className="space-y-4">
+        {myPosts.map((c, i) => (
+          <div key={`mine-${i}`} className="flex gap-3">
+            <div className="grid grid-cols-2 gap-1 w-16 shrink-0">
+              {c.photos.slice(0, 4).map((src, j) => (
+                <img key={j} src={src} alt="" className="w-full aspect-square rounded-lg object-cover" />
+              ))}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="font-medium text-sm">You</span>
+                <span className="text-[10px] text-acacia-400 bg-acacia-500/15 px-1.5 py-0.5 rounded-pill">✓ verified visit</span>
+              </div>
+              {c.caption && <p className="text-[13.5px] text-parchment-100/70 leading-snug">{c.caption}</p>}
+              <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                {c.tags.map((t) => (
+                  <span key={t} className="text-[10.5px] text-parchment-100/40 bg-dusk-800 px-2 py-0.5 rounded-pill">{t}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
         {place.community.map((c, i) => (
           <div key={i} className="flex gap-3">
-            <img src={c.photo} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+            <PlaceImage query={c.photoQuery} className="w-16 h-16 rounded-xl shrink-0" labelSize="small" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="font-medium text-sm">{c.name}</span>

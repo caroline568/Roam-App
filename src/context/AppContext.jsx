@@ -62,6 +62,18 @@ export function AppProvider({ children }) {
     }))
   }
 
+  function myPostsForPlace(placeId) {
+    return state.explorations
+      .filter((e) => e.placeId === placeId && e.feedback?.photos?.length)
+      .map((e) => ({
+        name: 'You',
+        photos: e.feedback.photos,
+        caption: e.feedback.caption,
+        tags: e.feedback.tags ?? [],
+        isMine: true,
+      }))
+  }
+
   const value = {
     saved: state.saved,
     explorations: state.explorations,
@@ -71,6 +83,7 @@ export function AppProvider({ children }) {
     startExploration,
     checkIn,
     submitFeedback,
+    myPostsForPlace,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

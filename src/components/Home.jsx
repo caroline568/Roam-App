@@ -3,21 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import { VIBES, TIME_OPTIONS, BUDGET_OPTIONS } from '../data/vibes.js'
 import { useApp } from '../context/AppContext.jsx'
 
+const MOOD_VIBES = VIBES.filter((v) => v.id !== 'surprise')
+
 export default function Home() {
   const navigate = useNavigate()
   const { setSession } = useApp()
-  const [vibe, setVibe] = useState(null)
+  const [vibes, setVibes] = useState([]) // multi-select now
   const [time, setTime] = useState(TIME_OPTIONS[1])
   const [budget, setBudget] = useState(BUDGET_OPTIONS[3])
 
+  function toggleVibe(v) {
+    setVibes((current) =>
+      current.some((c) => c.id === v.id) ? current.filter((c) => c.id !== v.id) : [...current, v]
+    )
+  }
+
   function handleRoam() {
-    if (!vibe) return
-    setSession({ vibe, time, budget })
-    if (vibe.id === 'surprise') {
-      navigate('/surprise')
-    } else {
-      navigate('/feed')
-    }
+    if (vibes.length === 0) return
+    setSession({ vibes, time, budget })
+    navigate('/feed')
+  }
+
+  function handleSurprise() {
+    setSession({ vibes: [], time, budget })
+    navigate('/surprise')
   }
 
   return (
@@ -28,31 +37,38 @@ export default function Home() {
           Where should you<br />actually go today?
         </h1>
         <p className="text-parchment-100/60 mt-3 text-[15px] leading-relaxed max-w-[30ch]">
-          Not another list of ten cafés. One good answer, picked for the mood you're in right now.
+          Not another list of ten cafés. Pick as many moods as fit — Roam blends them into one answer.
         </p>
       </header>
 
       <section className="mb-7">
-        <h2 className="text-sm font-semibold text-parchment-100/70 mb-3">What's your vibe?</h2>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-sm font-semibold text-parchment-100/70">What's your vibe?</h2>
+          {vibes.length > 0 && (
+            <button onClick={() => setVibes([])} className="text-[12px] text-parchment-100/40">Clear</button>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-2.5">
-          {VIBES.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setVibe(v)}
-              className={`tap flex items-center gap-2.5 rounded-2xl px-3.5 py-3 text-left border transition-colors ${
-                vibe?.id === v.id
-                  ? 'bg-savanna-500/15 border-savanna-500 text-parchment-50'
-                  : 'bg-dusk-900 border-dusk-700 text-parchment-100/80'
-              }`}
-            >
-              <span className="text-lg leading-none">{v.icon}</span>
-              <span className="text-[13.5px] font-medium">{v.label}</span>
-            </button>
-          ))}
+          {MOOD_VIBES.map((v) => {
+            const active = vibes.some((c) => c.id === v.id)
+            return (
+              <button
+                key={v.id}
+                onClick={() => toggleVibe(v)}
+                className={`tap flex items-center gap-2.5 rounded-2xl px-3.5 py-3 text-left border transition-colors ${
+                  active ? 'bg-savanna-500/15 border-savanna-500 text-parchment-50' : 'bg-dusk-900 border-dusk-700 text-parchment-100/80'
+                }`}
+              >
+                <span className="text-lg leading-none">{v.icon}</span>
+                <span className="text-[13.5px] font-medium">{v.label}</span>
+                {active && <span className="ml-auto text-savanna-400 text-sm">✓</span>}
+              </button>
+            )
+          })}
         </div>
       </section>
 
-      {vibe && vibe.id !== 'surprise' && (
+      {vibes.length > 0 && (
         <div className="rise-in">
           <section className="mb-6">
             <h2 className="text-sm font-semibold text-parchment-100/70 mb-3">How much time?</h2>
@@ -80,18 +96,26 @@ export default function Home() {
 
       <button
         onClick={handleRoam}
-        disabled={!vibe}
+        disabled={vibes.length === 0}
         className="tap w-full bg-savanna-500 disabled:bg-dusk-700 disabled:text-parchment-100/30 text-dusk-950 font-display font-semibold text-lg rounded-2xl py-4 shadow-soft transition-colors"
       >
-        {vibe?.id === 'surprise' ? 'Surprise me' : 'Roam'}
+        Roam{vibes.length > 1 ? ` (${vibes.length} vibes)` : ''}
       </button>
 
-      <button
-        onClick={() => navigate('/roam-mode')}
-        className="tap w-full mt-3 border border-dusk-700 text-parchment-100/70 rounded-2xl py-3.5 text-sm font-medium"
-      >
-        Or plan a full Roam route →
-      </button>
+      <div className="flex gap-3 mt-3">
+        <button
+          onClick={() => navigate('/roam-mode')}
+          className="tap flex-1 border border-dusk-700 text-parchment-100/70 rounded-2xl py-3.5 text-sm font-medium"
+        >
+          Plan a full route →
+        </button>
+        <button
+          onClick={handleSurprise}
+          className="tap flex-1 border border-dusk-700 text-parchment-100/70 rounded-2xl py-3.5 text-sm font-medium"
+        >
+          🎲 Surprise me
+        </button>
+      </div>
     </div>
   )
 }
